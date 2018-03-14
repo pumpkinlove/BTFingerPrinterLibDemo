@@ -30,7 +30,6 @@ public interface ProtocolOrderCode {
 
     byte DEV_GET_BASE64ENCODE = 0x57;   //BASE64 encoding of input data
 
-    byte DEV_GET_ENCRYPT_MODE_L0 = (byte) 0x96;    //Get Level 0 interface communication mode
 
     byte DEV_SET_SESSION_KEY = 0x72;    //Set the session key of the communication
 
@@ -38,7 +37,15 @@ public interface ProtocolOrderCode {
 
     byte DEV_EXPORT_RSA_PUBKEY = 0x53;  //Export RSA public key
 
-    byte DEV_IMPORT_CERTIFICATE = 0x42; //Export certificate
+    byte DEV_IMPORT_CERTIFICATE = 0x42; //import certificate
+    byte DEV_EXPORT_CERTIFICATE = 0x43; //Export certificate
 
+    byte DEV_SET_ENCRYPT_MODE_L0 = (byte) 0x95;    //Set the communication encryption method for HOST and DEVICE under Level 0 mode.
+    byte DEV_GET_ENCRYPT_MODE_L0 = (byte) 0x96;    //Get Level 0 interface communication mode
+
+    byte DEV_RSA_SIGN_DATA = 0x54;
+
+    byte DEV_AESGCM_ENCRYPT = 0x5D;     //AESGCM group encrypt
+    byte DEV_AESGCM_DECRYPT = 0x5E;     //AESGCM group decrypt
 
 }

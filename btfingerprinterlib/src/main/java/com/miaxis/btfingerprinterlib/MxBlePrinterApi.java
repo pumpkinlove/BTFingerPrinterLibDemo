@@ -2,6 +2,7 @@ package com.miaxis.btfingerprinterlib;
 
 import android.app.Application;
 
+import com.miaxis.btfingerprinterlib.utils.ProtocolUtil;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
 
 /**
@@ -79,8 +80,8 @@ public class MxBlePrinterApi {
         bleComm.getRSAPublicKey(keyNum, callBack);
     }
     
-    public void tmfGenerateDigest() {
-        // TODO: 2018/3/13  
+    public void tmfGenerateDigest(byte[] inputData, BleComm.CommonCallBack callBack) {
+        bleComm.tmfGenerateDigest(inputData, callBack);
     }
 
     public void tmfGenerateSessionKey(BleComm.CommonCallBack callBack) {
@@ -121,16 +122,16 @@ public class MxBlePrinterApi {
                 inputContent,inputContentLen,outputContent,outputContentLen);
     }
 
-    public void tmfWriteFileToDevice() {
-        // TODO: 2018/3/13
+    public void tmfWriteFileToDevice(byte iFileType, byte[] fileContent, int fileContentLen, BleComm.CommonCallBack callBack) {
+        bleComm.tmfWriteFileToDevice(iFileType, fileContent, fileContentLen, callBack);
     }
 
-    public void tmfReadFileFromDevice() {
-        // TODO: 2018/3/13  
+    public void tmfReadFileFromDevice(byte iFileType, BleComm.CommonCallBack callBack) {
+        bleComm.tmfReadFileFromDevice(iFileType, callBack);
     }
 
-    public void tmfSignData() {
-        // TODO: 2018/3/13
+    public void tmfSignData(byte keyNum, byte[] inputData, BleComm.CommonCallBack callBack) {
+        bleComm.signData(keyNum, inputData, callBack);
     }
 
     public void tmfGetAlgoVersion() {
@@ -153,12 +154,43 @@ public class MxBlePrinterApi {
         bleComm.getTEEVersion(callBack);
     }
 
-    public void tmfDeleteFileFromDevice() {
-        // TODO: 2018/3/13  
+    public void tmfDeleteFileFromDevice(byte iFileType, BleComm.CommonCallBack callBack) {
+        bleComm.tmfWriteFileToDevice(iFileType, null, 0, callBack);
     }
 
-    public void tmfSetUSBEncryption() {
-        // TODO: 2018/3/13
+    public void tmfSetUSBEncryption(final int encryptFlag, final BleComm.CommonCallBack callBack) {
+        bleComm.getPublicKey(new BleComm.CommonCallBack() {
+            @Override
+            public void onSuccess(byte[] publicKey) {
+                byte[] sessionKey = ProtocolUtil.getRandomNum(16);
+                bleComm.setSessionKey(sessionKey);
+                bleComm.downEncSessionKey(publicKey, new BleComm.CommonCallBack() {
+                    @Override
+                    public void onSuccess(byte[] responseData) {
+                        bleComm.setEncryptMode(encryptFlag, new BleComm.CommonCallBack() {
+                            @Override
+                            public void onSuccess(byte[] responseData) {
+                                callBack.onSuccess(responseData);
+                            }
+
+                            @Override
+                            public void onFailure(String errorMessage) {
+                                callBack.onFailure(errorMessage);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onFailure(String errorMessage) {
+                        callBack.onFailure(errorMessage);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                callBack.onFailure(errorMessage);
+            }
+        });
     }
 
     public void getFinger(BleComm.GetFingerCallBack callBack) {

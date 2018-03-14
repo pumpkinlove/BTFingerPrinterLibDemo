@@ -1,5 +1,7 @@
 package com.miaxis.btfingerprinterlib.utils;
 
+import java.util.Random;
+
 /**
  * Created by xu.nan on 2017/8/17.
  */
@@ -60,7 +62,7 @@ public class ProtocolUtil {
             reqBytes[2] = (byte) orderLen;           //长度
         } else {
             reqBytes[1] = (byte) (dataLen - 255);
-            reqBytes[2] = (byte) 0xff;
+            reqBytes[2] = (byte) 0xFF;
         }
 
         reqBytes[3] = protocolOrderCode;        //P1  约定的指纹设备命令
@@ -75,6 +77,19 @@ public class ProtocolUtil {
         reqBytes[totalLen - 2] = CodeUtil.getXorCheckCode(reqBytes);            //校验和
         reqBytes[totalLen - 1] = ProtocolOrderCode.PROTOCOL_END;
         return reqBytes;
+    }
+
+    //生成随机数
+    public static byte[] getRandomNum(int iNum){
+        byte[] rand = new byte[iNum];
+        Random r = new Random();
+        for(int i=0;i<iNum;i++){
+            rand[i] = (byte) r.nextInt(127);
+            if (rand[i] == 0x00) {
+                rand[i] = (byte) (i+1);
+            }
+        }
+        return rand;
     }
 
 }

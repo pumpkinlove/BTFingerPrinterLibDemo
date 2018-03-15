@@ -95,8 +95,110 @@
             android:layout_height="50dp" />
 
         <Button
-            android:text="Get Encrypt Mode"
-            android:id="@+id/btn_get_encrypt_mode"
+            android:text="Get Finger Image"
+            android:id="@+id/btn_get_finger_image"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Set Device Mode"
+            android:id="@+id/btn_set_device_mode"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Base64 Encode"
+            android:id="@+id/btn_base64_encode"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Generate RSA Keypair"
+            android:id="@+id/btn_gen_RSA_key_pair"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Get RSA Public Key"
+            android:id="@+id/btn_get_RSA_public_key"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Generate Digest"
+            android:id="@+id/btn_gen_digest"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Generate Session Key"
+            android:id="@+id/btn_get_session_key"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="AES_GCM_NOPADDING_Encryption"
+            android:id="@+id/btn_AES_GCM_NOPADDING_Encryption"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="AES_GCM_NOPADDING_Decryption"
+            android:id="@+id/btn_AES_GCM_NOPADDING_Decryption"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Digital Signature RSA2048 With SHA256"
+            android:id="@+id/btn_DigitalSignatureRSA2048withSHA256"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Asymmetric Encryption X509"
+            android:id="@+id/btn_AsymmetricEncryptionX509"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Write File To Device"
+            android:id="@+id/btn_write_file_to_device"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Read File From Device"
+            android:id="@+id/btn_read_file_from_device"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Sign Data"
+            android:id="@+id/btn_sign_data"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Get Secure Processor UUID"
+            android:id="@+id/btn_get_secure_processor_uuid"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Get Secure Processor Version"
+            android:id="@+id/btn_get_secure_processor_version"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Delete File From Device"
+            android:id="@+id/btn_delete_from_device"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Button
+            android:text="Set USB Encryption"
+            android:id="@+id/btn_set_usb_encryption"
             android:layout_width="match_parent"
             android:layout_height="50dp" />
 

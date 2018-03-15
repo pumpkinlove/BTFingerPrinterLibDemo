@@ -16,6 +16,7 @@ import com.miaxis.btfingerprinterlib.utils.CodeUtil;
 import com.miaxis.btfingerprinterlib.utils.ProtocolOrderCode;
 import com.miaxis.btfingerprinterlib.utils.ProtocolUtil;
 import com.miaxis.btfingerprinterlib.utils.cipher.DES3;
+import com.miaxis.btfingerprinterlib.utils.cipher.Digest;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
 
 import java.security.interfaces.RSAPublicKey;
@@ -50,10 +51,6 @@ public class BleComm {
     private byte[] cacheData = new byte[0];
 
     private ConnectCallBack connectCallBack;
-    private ScrollPaperCallBack scrollPaperCallBack;
-    private PrintCallBack printCallBack;
-    private GetFingerCallBack getFingerCallBack;
-    private CancelFingerCallBack cancelFingerCallBack;
     private CommonCallBack commonCallBack;
 
     private static final byte GROUP_CMD = -1;
@@ -83,6 +80,7 @@ public class BleComm {
     }
 
     void connect(String mac, ConnectCallBack callBack) {
+        bleManager.disconnectAllDevice();
         connectCallBack = callBack;
         BleScanRuleConfig scanRuleConfig = new BleScanRuleConfig.Builder()
                 .setDeviceMac(mac)                  // 只扫描指定mac的设备，可选
@@ -167,104 +165,11 @@ public class BleComm {
                 cacheData = null;
                 return;
             }
-            switch (curOrderCode) {
-                case ProtocolOrderCode.PRINT:
-                    Log.e(TAG, "PRINT");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        printCallBack.onPrintSuccess();
-                    } else {
-                        printCallBack.onPrintFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.SCROLL_PAPER:
-                    Log.e(TAG, "SCROLL_PAPER");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        scrollPaperCallBack.onScrollSuccess();
-                    } else {
-                        scrollPaperCallBack.onScrollFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.GET_FINGER:
-                    Log.e(TAG, "GET_FINGER");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        getFingerCallBack.onGetFingerSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        getFingerCallBack.onGetFingerFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.CANCEL_GET_FINGER:
-                    Log.e(TAG, "CANCEL_GET_FINGER");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        cancelFingerCallBack.onCancelSuccess();
-                    } else {
-                        cancelFingerCallBack.onCancelFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_OPEN_CLOSE_LED:
-                    Log.e(TAG, "DEV_OPEN_CLOSE_LED");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.CMD_GET_DEVICE_INFO:
-                    Log.e(TAG, "CMD_GET_DEVICE_INFO");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_GET_DEVICE_SN:
-                    Log.e(TAG, "DEV_GET_DEVICE_SN");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.CMD_GET_DEVICE_UUID:
-                    Log.e(TAG, "CMD_GET_DEVICE_UUID");
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_SET_ENCRYPT_MODE_L0:
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_GET_ENCRYPT_MODE_L0:
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_GET_PUBLICK_KEY:
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        byte[] publicKey = CodeUtil.getData(mergeCacheData);
-                        commonCallBack.onSuccess(publicKey);
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                case ProtocolOrderCode.DEV_SET_SESSION_KEY:
-                    if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
-                        commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
-                    } else {
-                        commonCallBack.onFailure(reMsgSb.toString());
-                    }
-                    break;
-                default:
-                    break;
+            if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
+                commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
+            } else {
+                commonCallBack.onFailure(reMsgSb.toString());
             }
-
         }
 
     }
@@ -411,38 +316,18 @@ public class BleComm {
         void onDisConnect();
     }
 
-    public interface PrintCallBack {
-        void onPrintSuccess();
-        void onPrintFailure(String errorMessage);
-    }
-
-    public interface GetFingerCallBack {
-        void onGetFingerSuccess(byte[] fingerData);
-        void onGetFingerFailure(String errorMessage);
-    }
-
-    public interface ScrollPaperCallBack {
-        void onScrollSuccess();
-        void onScrollFailure(String errorMessage);
-    }
-
-    public interface CancelFingerCallBack {
-        void onCancelSuccess();
-        void onCancelFailure(String errorMessage);
-    }
-
     public interface CommonCallBack {
         void onSuccess(byte[] responseData);
         void onFailure(String errorMessage);
     }
 
-    void scrollPaper(int num, ScrollPaperCallBack callBack) {
-        scrollPaperCallBack = callBack;
+    void scrollPaper(int num, CommonCallBack callBack) {
+        commonCallBack = callBack;
         sendOrder(ProtocolOrderCode.SCROLL_PAPER, new byte[]{(byte) num}, encryptMode, sessionKey);
     }
 
-    void print(String content, PrintCallBack callBack) {
-        printCallBack = callBack;
+    void print(String content, CommonCallBack callBack) {
+        commonCallBack = callBack;
         byte[] data = new byte[PRINT_SIZE];
         for (int i = 0; i < content.length(); i++) {
             data[i] = (byte) content.charAt(i);
@@ -453,13 +338,13 @@ public class BleComm {
         sendOrder(ProtocolOrderCode.PRINT, data, encryptMode, sessionKey);
     }
 
-    void cancelDevice(CancelFingerCallBack callBack) {
-        cancelFingerCallBack = callBack;
+    void cancelDevice(CommonCallBack callBack) {
+        commonCallBack = callBack;
         sendOrder(ProtocolOrderCode.CANCEL_GET_FINGER, null, encryptMode, sessionKey);
     }
 
-    void getFinger(GetFingerCallBack callBack) {
-        getFingerCallBack = callBack;
+    void getFinger(CommonCallBack callBack) {
+        commonCallBack = callBack;
 
         byte[] data = new byte[4];
         data[0] = 0x00;
@@ -515,9 +400,9 @@ public class BleComm {
         sendOrder(ProtocolOrderCode.DEV_GET_BASE64ENCODE, data, encryptMode, sessionKey);
     }
 
-    void generateRSAKeyPair(CommonCallBack callBack) {
+    void generateRSAKeyPair(byte keyNum, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GEN_RSAKEY_PAIR, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GEN_RSAKEY_PAIR, new byte[]{keyNum}, encryptMode, sessionKey);
     }
 
     void getEncryptMode(CommonCallBack callBack) {
@@ -550,16 +435,31 @@ public class BleComm {
         sendOrder(ProtocolOrderCode.DEV_SET_MODE, new byte[]{(byte) mode}, encryptMode, sessionKey);
     }
 
-    void tmfGenerateDigest(byte[] inputData, CommonCallBack callBack) {
+    void tmfGenerateDigest(byte bAlgorithmType, byte[] inputData, CommonCallBack callBack) {
         commonCallBack = callBack;
         if (inputData == null) {
             commonCallBack.onFailure("input data can not be null");
             return;
         }
+
         if (inputData.length > MAX_DATA_LEN) {
-
+            byte[] bDigest = Digest.JAVADigest(inputData);
+            byte[] bDigestContent = new byte[bDigest.length];
+            System.arraycopy(bDigest, 0, bDigestContent, 0, bDigest.length);
+            commonCallBack.onSuccess(bDigestContent);
         } else {
+            int iSendLen = 5 + inputData.length;
+            byte[] bSendData = new byte[iSendLen];
+            bSendData[0] = bAlgorithmType;
+            byte[] bDataLen = CodeUtil.intToByteArray(inputData.length);
+            for (int i = 0; i < 4; i++) {
+                bSendData[1+i] = bDataLen[i];
+            }
+            for (int i = 0; i < inputData.length; i++) {
+                bSendData[5+i] = inputData[i];
+            }
 
+            sendOrder(ProtocolOrderCode.DEV_GEN_DIGEST, bSendData, encryptMode, sessionKey);
         }
     }
 

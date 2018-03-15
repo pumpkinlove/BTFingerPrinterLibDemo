@@ -48,4 +48,6 @@ public interface ProtocolOrderCode {
     byte DEV_AESGCM_ENCRYPT = 0x5D;     //AESGCM group encrypt
     byte DEV_AESGCM_DECRYPT = 0x5E;     //AESGCM group decrypt
 
+    byte DEV_GEN_DIGEST = 0x46;         //generate digest
+
 }

@@ -36,11 +36,11 @@ public class MxBlePrinterApi {
         bleComm.connect(mac, callBack);
     }
 
-    public void print(String content, BleComm.PrintCallBack callBack) {
+    public void print(String content, BleComm.CommonCallBack callBack) {
         bleComm.print(content, callBack);
     }
 
-    public void scrollPaper(int num, BleComm.ScrollPaperCallBack callBack) {
+    public void scrollPaper(int num, BleComm.CommonCallBack callBack) {
         bleComm.scrollPaper(num, callBack);
     }
 
@@ -72,8 +72,8 @@ public class MxBlePrinterApi {
         bleComm.base64Encode(inputData, callBack);
     }
 
-    public void tmfGenerateRSAKeyPair(BleComm.CommonCallBack callBack) {
-        bleComm.generateRSAKeyPair(callBack);
+    public void tmfGenerateRSAKeyPair(byte keyNum, BleComm.CommonCallBack callBack) {
+        bleComm.generateRSAKeyPair(keyNum, callBack);
     }
 
     public void tmfGetRSAPublicKey(int keyNum, BleComm.CommonCallBack callBack) {
@@ -193,11 +193,11 @@ public class MxBlePrinterApi {
         });
     }
 
-    public void getFinger(BleComm.GetFingerCallBack callBack) {
+    public void getFinger(BleComm.CommonCallBack callBack) {
         bleComm.getFinger(callBack);
     }
 
-    public void cancelDevice(BleComm.CancelFingerCallBack callBack) {
+    public void cancelDevice(BleComm.CommonCallBack callBack) {
         bleComm.cancelDevice(callBack);
     }
 

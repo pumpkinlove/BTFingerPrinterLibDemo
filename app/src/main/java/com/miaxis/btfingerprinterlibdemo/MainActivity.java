@@ -548,8 +548,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void genDigest() {
+        byte bAlgType = 0;
         byte[] inputData = new byte[100];
-        api.tmfGenerateDigest(inputData, new BleComm.CommonCallBack() {
+        api.tmfGenerateDigest(bAlgType, inputData, new BleComm.CommonCallBack() {
             @Override
             public void onSuccess(byte[] bytes) {
                 Log.e(TAG, "tmfGenerateDigest onSuccess");

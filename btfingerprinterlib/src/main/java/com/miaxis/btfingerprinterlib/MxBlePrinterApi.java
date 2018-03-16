@@ -2,10 +2,12 @@ package com.miaxis.btfingerprinterlib;
 
 import android.app.Application;
 
+import com.miaxis.btfingerprinterlib.utils.CodeUtil;
 import com.miaxis.btfingerprinterlib.utils.ProtocolUtil;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
 
 /**
+ * Miaxis ble finger printer api
  * Created by xu.nan on 2018/3/7.
  */
 
@@ -13,7 +15,6 @@ public class MxBlePrinterApi {
 
     private static final String TAG = "MxBlePrinterApi";
     private BleComm bleComm;
-    private Application app;
     private static volatile MxBlePrinterApi api;
 
     public static MxBlePrinterApi getInstance(Application app) {
@@ -24,7 +25,6 @@ public class MxBlePrinterApi {
     }
 
     private MxBlePrinterApi(Application app) {
-        this.app = app;
         bleComm = new BleComm(app);
     }
 
@@ -48,8 +48,59 @@ public class MxBlePrinterApi {
         bleComm.getDeviceSN(callBack);
     }
 
-    public void getFingerImage(BleComm.CommonCallBack callBack) {
-        bleComm.getFingerImage(callBack);
+    public void getFingerImage(final BleComm.CommonCallBack callBack) {
+        bleComm.getDeviceMode(new BleComm.CommonCallBack() {
+            @Override
+            public void onSuccess(byte[] responseData) {
+                int mode = responseData[0];
+                if (mode != 0) {
+                    callBack.onFailure("mode error");
+                } else {
+                    bleComm.getEncryptMode(new BleComm.CommonCallBack() {
+                        @Override
+                        public void onSuccess(byte[] responseData) {
+                            int mode = responseData[0];
+                            bleComm.setEncryptMode(mode);
+                            if (mode == 1) {
+                                bleComm.getPublicKey(new BleComm.CommonCallBack() {
+                                    @Override
+                                    public void onSuccess(byte[] responseData) {
+                                        byte[] sessionKey = ProtocolUtil.getRandomNum(16);
+                                        bleComm.setSessionKey(sessionKey);
+                                        bleComm.downEncSessionKey(responseData, new BleComm.CommonCallBack() {
+                                            @Override
+                                            public void onSuccess(byte[] responseData) {
+                                                bleComm.getFingerImage(callBack);
+                                            }
+
+                                            @Override
+                                            public void onFailure(String errorMessage) {
+                                                callBack.onFailure(errorMessage);
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(String errorMessage) {
+                                        callBack.onFailure(errorMessage);
+                                    }
+                                });
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(String errorMessage) {
+                            callBack.onFailure(errorMessage);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+
+            }
+        });
     }
 
     public void getDeviceUUID(BleComm.CommonCallBack callBack) {
@@ -80,46 +131,50 @@ public class MxBlePrinterApi {
         bleComm.getRSAPublicKey(keyNum, callBack);
     }
     
-    public void tmfGenerateDigest(byte[] inputData, BleComm.CommonCallBack callBack) {
-        bleComm.tmfGenerateDigest(inputData, callBack);
+    public void tmfGenerateDigest(byte bAlgType, byte[] inputData, BleComm.CommonCallBack callBack) {
+        bleComm.tmfGenerateDigest(bAlgType, inputData, callBack);
     }
 
     public void tmfGenerateSessionKey(BleComm.CommonCallBack callBack) {
         bleComm.getEncryptMode(callBack);
     }
 
-    public void tmfAesGcmNoPaddingEncryption() {
-        // TODO: 2018/3/13
+    public void tmfAesGcmNoPaddingEncryption(byte[] key,
+                                             byte[] inputData,
+                                             byte[] ivData,
+                                             byte[] aadData,
+                                             BleComm.CommonCallBack callBack) {
+        bleComm.tmfAESGCMEncrypt(key, inputData, ivData, aadData, callBack);
     }
 
-    public void tmfAesGcmNoPaddingDecryption() {
-        // TODO: 2018/3/13
+    public void tmfAesGcmNoPaddingDecryption(byte[] key,
+                                             byte[] inputData,
+                                             byte[] ivData,
+                                             byte[] aadData,
+                                             BleComm.CommonCallBack callBack) {
+        bleComm.tmfAESGCMDecrypt(key, inputData, ivData, aadData, callBack);
     }
 
-    public void tmfDigitalSignatureRSA2048withSHA256() {
-        // TODO: 2018/3/13
+    public void tmfDigitalSignatureRSA2048withSHA256(byte keyNum,
+                                                     byte[] inputData,
+                                                     BleComm.CommonCallBack callBack) {
+        bleComm.tmfDigitalSignatureRSA2048withSHA256(keyNum, inputData, callBack);
     }
 
     /**
      * Asymmetric encryption using RSA-2048 when x509 certificate data is provided as an input from host.
-     * @param algorithmType         0 for RSA/ECB/PKCS1Padding
      * @param x509CertificateData   x509 Certificate Data
-     * @param x509Len               x509 Certificate Data length
      * @param inputContent          input data
-     * @param inputContentLen       input data length
      * @param outputContent         output data
      * @param outputContentLen      output data length
      * @return 0 for Success, otherwise errorCode.
      */
-    public int tmfAsymmetricEncryptionX509(byte algorithmType,
-                                           byte[] x509CertificateData,
-                                           int x509Len,
+    public int tmfAsymmetricEncryptionX509(byte[] x509CertificateData,
                                            byte[] inputContent,
-                                           int inputContentLen,
                                            byte[] outputContent,
                                            int[] outputContentLen) {
-        return RSAEncrypt.encryptX509(x509CertificateData,x509Len,
-                inputContent,inputContentLen,outputContent,outputContentLen);
+        return RSAEncrypt.encryptX509(x509CertificateData,
+                inputContent,outputContent,outputContentLen);
     }
 
     public void tmfWriteFileToDevice(byte iFileType, byte[] fileContent, int fileContentLen, BleComm.CommonCallBack callBack) {
@@ -161,7 +216,7 @@ public class MxBlePrinterApi {
     public void tmfSetUSBEncryption(final int encryptFlag, final BleComm.CommonCallBack callBack) {
         bleComm.getPublicKey(new BleComm.CommonCallBack() {
             @Override
-            public void onSuccess(byte[] publicKey) {
+            public void onSuccess(byte[] publicKey) {       //514 bytes RSA public key
                 byte[] sessionKey = ProtocolUtil.getRandomNum(16);
                 bleComm.setSessionKey(sessionKey);
                 bleComm.downEncSessionKey(publicKey, new BleComm.CommonCallBack() {

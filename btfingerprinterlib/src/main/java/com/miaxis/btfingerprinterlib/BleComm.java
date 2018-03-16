@@ -17,7 +17,10 @@ import com.miaxis.btfingerprinterlib.utils.ProtocolOrderCode;
 import com.miaxis.btfingerprinterlib.utils.ProtocolUtil;
 import com.miaxis.btfingerprinterlib.utils.cipher.DES3;
 import com.miaxis.btfingerprinterlib.utils.cipher.Digest;
+import com.miaxis.btfingerprinterlib.utils.cipher.Encrypt;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
+
+import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.security.interfaces.RSAPublicKey;
 
@@ -323,7 +326,7 @@ public class BleComm {
 
     void scrollPaper(int num, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.SCROLL_PAPER, new byte[]{(byte) num}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.SCROLL_PAPER, new byte[]{(byte) num}, 0, null);
     }
 
     void print(String content, CommonCallBack callBack) {
@@ -335,7 +338,7 @@ public class BleComm {
         for (int i = content.length(); i < data.length; i++) {
             data[i] = 0x20;
         }
-        sendOrder(ProtocolOrderCode.PRINT, data, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.PRINT, data, 0, null);
     }
 
     void cancelDevice(CommonCallBack callBack) {
@@ -357,22 +360,22 @@ public class BleComm {
 
     void lampControl(int lampOnOff, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_OPEN_CLOSE_LED, new byte[]{(byte) lampOnOff}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_OPEN_CLOSE_LED, new byte[]{(byte) lampOnOff}, 0, sessionKey);
     }
 
     void getDeviceInfo(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.CMD_GET_DEVICE_INFO, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.CMD_GET_DEVICE_INFO, null, 0, sessionKey);
     }
 
     void getDeviceSN(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_DEVICE_SN, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_DEVICE_SN, null, 0, sessionKey);
     }
 
     void getDeviceUUID(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.CMD_GET_DEVICE_UUID, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.CMD_GET_DEVICE_UUID, null, 0, sessionKey);
     }
 
     void getFingerImage(CommonCallBack callBack) {
@@ -382,7 +385,7 @@ public class BleComm {
         data[1] = 0x00;
         data[2] = 0x27;
         data[3] = 0x10;
-        sendOrder(ProtocolOrderCode.GET_FINGER_IMAGE, data, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_IMAGE, data, encryptMode, sessionKey);
     }
 
     void getRSAPublicKey(int keyNum, CommonCallBack callBack) {
@@ -392,25 +395,25 @@ public class BleComm {
 
     void getPublicKey(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_PUBLICK_KEY, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_PUBLICK_KEY, null, 0, null);    //no des encrypt
     }
 
     void base64Encode(byte[] data, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_BASE64ENCODE, data, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_BASE64ENCODE, data, 0, sessionKey);
     }
 
     void generateRSAKeyPair(byte keyNum, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GEN_RSAKEY_PAIR, new byte[]{keyNum}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GEN_RSAKEY_PAIR, new byte[]{keyNum}, 0, sessionKey);
     }
 
     void getEncryptMode(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_ENCRYPT_MODE_L0, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_ENCRYPT_MODE_L0, null, 0, null);
     }
 
-    void downEncSessionKey(byte[] publicKey, CommonCallBack callBack) {
+    void downEncSessionKey(byte[] publicKey, CommonCallBack callBack) {     //no 3des encrypt
         commonCallBack = callBack;
         //转换为java公钥
         RSAPublicKey javaPubKey = RSAEncrypt.DeviceRSAPubKeyToJavaPubKey(publicKey);
@@ -427,12 +430,12 @@ public class BleComm {
             commonCallBack.onFailure("public key encrypt failed");
             return;
         }
-        sendOrder(ProtocolOrderCode.DEV_SET_SESSION_KEY, encSessionKey, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_SET_SESSION_KEY, encSessionKey, 0, null);
     }
 
     void setDeviceMode(int mode, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_SET_MODE, new byte[]{(byte) mode}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_SET_MODE, new byte[]{(byte) mode}, 0, sessionKey);
     }
 
     void tmfGenerateDigest(byte bAlgorithmType, byte[] inputData, CommonCallBack callBack) {
@@ -441,36 +444,32 @@ public class BleComm {
             commonCallBack.onFailure("input data can not be null");
             return;
         }
-
         if (inputData.length > MAX_DATA_LEN) {
             byte[] bDigest = Digest.JAVADigest(inputData);
-            byte[] bDigestContent = new byte[bDigest.length];
-            System.arraycopy(bDigest, 0, bDigestContent, 0, bDigest.length);
-            commonCallBack.onSuccess(bDigestContent);
+            byte[] bDigestLen = CodeUtil.intToByteArray(bDigest.length);
+            byte[] reData = new byte[bDigest.length + bDigestLen.length];
+            System.arraycopy(bDigestLen, 0, reData, 0, bDigestLen.length);
+            System.arraycopy(bDigest, 0, reData, 4, bDigest.length);
+            commonCallBack.onSuccess(reData);
         } else {
-            int iSendLen = 5 + inputData.length;
+            int iSendLen = 1 + 4 + inputData.length;        //1 byte bAlgorithmType + 4 byte inputData length + input data
             byte[] bSendData = new byte[iSendLen];
             bSendData[0] = bAlgorithmType;
             byte[] bDataLen = CodeUtil.intToByteArray(inputData.length);
-            for (int i = 0; i < 4; i++) {
-                bSendData[1+i] = bDataLen[i];
-            }
-            for (int i = 0; i < inputData.length; i++) {
-                bSendData[5+i] = inputData[i];
-            }
-
-            sendOrder(ProtocolOrderCode.DEV_GEN_DIGEST, bSendData, encryptMode, sessionKey);
+            System.arraycopy(bDataLen, 0, bSendData, 1, 4);
+            System.arraycopy(inputData, 0, bSendData, 5, inputData.length);
+            sendOrder(ProtocolOrderCode.DEV_GEN_DIGEST, bSendData, 0, sessionKey);
         }
     }
 
     void getTEEUUID(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_TEE_UUID, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_TEE_UUID, null, 0, sessionKey);
     }
 
     void getTEEVersion(CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_GET_TEE_INFO, null, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_GET_TEE_INFO, null, 0, sessionKey);
     }
 
     void tmfWriteFileToDevice(byte iFileType, byte[] fileData, int dataLen, CommonCallBack callBack) {
@@ -487,18 +486,22 @@ public class BleComm {
         byte[] lenBytes = CodeUtil.intToByteArray(dataLen);
         System.arraycopy(lenBytes, 0, data, 1, 4);
         System.arraycopy(fileData, 0, data, 5, dataLen);
-        sendOrder(ProtocolOrderCode.DEV_IMPORT_CERTIFICATE, data, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_IMPORT_CERTIFICATE, data, 0, sessionKey);
     }
 
     void tmfReadFileFromDevice(byte iFileType, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_EXPORT_CERTIFICATE, new byte[]{iFileType}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_EXPORT_CERTIFICATE, new byte[]{iFileType}, 0, sessionKey);
 
+    }
+
+    void setEncryptMode(int mode) {
+        this.encryptMode = mode;
     }
 
     void setEncryptMode(int mode, CommonCallBack callBack) {
         commonCallBack = callBack;
-        sendOrder(ProtocolOrderCode.DEV_SET_ENCRYPT_MODE_L0, new byte[]{(byte) mode}, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_SET_ENCRYPT_MODE_L0, new byte[]{(byte) mode}, 1, sessionKey);
     }
 
     void signData(byte keyNum, byte[] signData, CommonCallBack callBack) {
@@ -516,15 +519,133 @@ public class BleComm {
         byte[] len = CodeUtil.intToByteArray(signData.length);
         System.arraycopy(len, 0, data, 1, 4);
         System.arraycopy(signData, 0, data, 5, signData.length);
-        sendOrder(ProtocolOrderCode.DEV_RSA_SIGN_DATA, data, encryptMode, sessionKey);
+        sendOrder(ProtocolOrderCode.DEV_RSA_SIGN_DATA, data, 0, sessionKey);
     }
 
-    void encryptAES(byte[] inputData, CommonCallBack callBack) {
+    void tmfAESGCMEncrypt(byte[] key,
+                          byte[] inputData,
+                          byte[] ivData,
+                          byte[] aadData,
+                          CommonCallBack callBack) {
+        commonCallBack = callBack;
         if (inputData.length > MAX_DATA_LEN) {
-
+            byte[] reData;
+            try {
+                byte[] encryptedData = Encrypt.encryptAES_GCM_NOPADDINGSessionKey(true,key,ivData,aadData,inputData);
+                byte[] bEncryptedDataLen = CodeUtil.intToByteArray(encryptedData.length);
+                reData = new byte[bEncryptedDataLen.length + encryptedData.length];
+                System.arraycopy(bEncryptedDataLen, 0 , reData, 0, bEncryptedDataLen.length);
+                System.arraycopy(encryptedData, 0, reData, 4, encryptedData.length);
+                commonCallBack.onSuccess(reData);
+            } catch (Exception e) {
+                commonCallBack.onFailure("AESGCMEncrypt failed");
+            }
         } else {
+            int iSendLen = 4 + key.length + 4 + inputData.length + 4 + ivData.length + 4 + aadData.length;
+            byte[] bSendData = new byte[iSendLen];
+            byte[] bKeyLen = CodeUtil.intToByteArray(key.length);
+            int iOffSize = 0;
 
+            System.arraycopy(bKeyLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(key, 0, bSendData, iOffSize, key.length);
+            iOffSize += key.length;
+
+            byte[] binputDataLen = CodeUtil.intToByteArray(inputData.length);
+            System.arraycopy(binputDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(inputData, 0, bSendData, iOffSize, inputData.length);
+            iOffSize += inputData.length;
+
+            byte[] bivDataLen = CodeUtil.intToByteArray(ivData.length);
+            System.arraycopy(bivDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(ivData, 0, bSendData, iOffSize, ivData.length);
+            iOffSize += ivData.length;
+
+            byte[] bAadDataLen = CodeUtil.intToByteArray(aadData.length);
+            System.arraycopy(bAadDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(aadData, 0, bSendData, iOffSize, aadData.length);
+
+            sendOrder(ProtocolOrderCode.DEV_AESGCM_ENCRYPT, bSendData, encryptMode, sessionKey);
         }
+
     }
+
+    void tmfAESGCMDecrypt(byte[] key,
+                          byte[] inputData,
+                          byte[] ivData,
+                          byte[] aadData,
+                          CommonCallBack callBack) {
+        commonCallBack = callBack;
+        if (inputData.length > MAX_DATA_LEN) {
+            byte[] reData;
+            try {
+                byte[] encryptedData = Encrypt.encryptAES_GCM_NOPADDINGSessionKey(true,key,ivData,aadData,inputData);
+                byte[] bEncryptedDataLen = CodeUtil.intToByteArray(encryptedData.length);
+                reData = new byte[bEncryptedDataLen.length + encryptedData.length];
+                System.arraycopy(bEncryptedDataLen, 0 , reData, 0, bEncryptedDataLen.length);
+                System.arraycopy(encryptedData, 0, reData, 4, encryptedData.length);
+                commonCallBack.onSuccess(reData);
+            } catch (Exception e) {
+                commonCallBack.onFailure("AESGCMDecrypt failed");
+            }
+        } else {
+            int iSendLen = 4 + key.length + 4 + inputData.length + 4 + ivData.length + 4 + aadData.length;
+            byte[] bSendData = new byte[iSendLen];
+            byte[] bKeyLen = CodeUtil.intToByteArray(key.length);
+            int iOffSize = 0;
+
+            System.arraycopy(bKeyLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(key, 0, bSendData, iOffSize, key.length);
+            iOffSize += key.length;
+
+            byte[] binputDataLen = CodeUtil.intToByteArray(inputData.length);
+            System.arraycopy(binputDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(inputData, 0, bSendData, iOffSize, inputData.length);
+            iOffSize += inputData.length;
+
+            byte[] bivDataLen = CodeUtil.intToByteArray(ivData.length);
+            System.arraycopy(bivDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(ivData, 0, bSendData, iOffSize, ivData.length);
+            iOffSize += ivData.length;
+
+            byte[] bAadDataLen = CodeUtil.intToByteArray(aadData.length);
+            System.arraycopy(bAadDataLen, 0, bSendData, iOffSize, 4);
+            iOffSize += 4;
+            System.arraycopy(aadData, 0, bSendData, iOffSize, aadData.length);
+
+            sendOrder(ProtocolOrderCode.DEV_AESGCM_DECRYPT, bSendData, encryptMode, sessionKey);
+        }
+
+    }
+
+    void tmfDigitalSignatureRSA2048withSHA256(byte bKeyNum,
+                                              byte[] inputData,
+                                              CommonCallBack callBack) {
+        commonCallBack = callBack;
+        byte[] bDigestData = Digest.JAVADigest(inputData);
+        byte[] OIDSHA_256 = new byte[]{0x30,0x31,0x30,0x0d,0x06,0x09,0x60,(byte) 0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20};
+        byte[] bToSignData = new byte[256];
+        System.arraycopy(OIDSHA_256, 0, bToSignData, 0, OIDSHA_256.length);
+        System.arraycopy(bDigestData, 0, bToSignData, OIDSHA_256.length, bDigestData.length);
+        byte[] bSendData = new byte[1 + 4 + bToSignData.length];
+        bSendData[0] = bKeyNum;
+        byte[] bToSignDataLen = CodeUtil.intToByteArray(bToSignData.length);
+        System.arraycopy(bToSignDataLen, 0, bSendData, 1, 4);
+        System.arraycopy(bToSignData, 0, bSendData, 1 + 4, bToSignData.length);
+        sendOrder(ProtocolOrderCode.DEV_RSA_SIGN_DATA, bSendData, encryptMode, sessionKey);
+    }
+
+    void getDeviceMode(CommonCallBack callBack) {
+        commonCallBack = callBack;
+        sendOrder(ProtocolOrderCode.DEV_GET_MODE, null, 0, null);
+    }
+
+
 
 }

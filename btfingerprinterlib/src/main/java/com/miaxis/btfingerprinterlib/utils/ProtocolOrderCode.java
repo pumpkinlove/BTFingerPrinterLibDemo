@@ -18,7 +18,7 @@ public interface ProtocolOrderCode {
     byte CMD_GET_DEVICE_INFO = 0x09;    //Read device version number
     byte DEV_GET_DEVICE_SN = 0x0E;      //Read device serial number.
     byte CMD_GET_DEVICE_UUID = 0x40;    //Read the device UUID
-    byte GET_FINGER_IMAGE = (byte) 0x97;    //get finger image 300 * 400
+    byte DEV_GET_IMAGE = (byte) 0x97;    //get finger image 300 * 400
     byte DEV_GET_TEE_UUID = (byte) 0x94;        //Get TEE UUID  zzGetDevZ32UUID
     byte DEV_GET_TEE_INFO = 0x34;       //Get the TEE version number
 
@@ -33,7 +33,8 @@ public interface ProtocolOrderCode {
 
     byte DEV_SET_SESSION_KEY = 0x72;    //Set the session key of the communication
 
-    byte DEV_SET_MODE = (byte) 0x92;   //Set device mode
+    byte DEV_SET_MODE = (byte) 0x92;   //Set device mode L0 L1
+    byte DEV_GET_MODE = (byte) 0x93;   //get device mode L0 L1
 
     byte DEV_EXPORT_RSA_PUBKEY = 0x53;  //Export RSA public key
 
@@ -45,9 +46,11 @@ public interface ProtocolOrderCode {
 
     byte DEV_RSA_SIGN_DATA = 0x54;
 
-    byte DEV_AESGCM_ENCRYPT = 0x5D;     //AESGCM group encrypt
-    byte DEV_AESGCM_DECRYPT = 0x5E;     //AESGCM group decrypt
+    byte DEV_AESGCM_ENCRYPT = 0x58;     //AESGCM group encrypt
+    byte DEV_AESGCM_DECRYPT = 0x59;     //AESGCM group decrypt
 
     byte DEV_GEN_DIGEST = 0x46;         //generate digest
+
+
 
 }

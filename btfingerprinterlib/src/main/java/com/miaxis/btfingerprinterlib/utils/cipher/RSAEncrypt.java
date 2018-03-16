@@ -34,59 +34,34 @@ import javax.crypto.NoSuchPaddingException;
 
 public class RSAEncrypt {
 
-	public static int encryptX509(byte[] x509CertificateData, int x509Len,
-			byte[] inputContent, int inputContentLen, byte[] outputContent,
-			int[] outputContentLen) {
-		CertificateFactory cf = null;
+	public static int encryptX509(byte[] x509CertificateData, byte[] inputContent, byte[] outputContent, int[] outputContentLen) {
+		CertificateFactory cf;
 		try {
 			cf = CertificateFactory.getInstance("X.509");
 		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			return MXErrCode.ERR_X509;
 		}
-		java.security.cert.Certificate c = null;
+		java.security.cert.Certificate c;
 		try {
 			InputStream in = new ByteArrayInputStream(x509CertificateData);
 			c = cf.generateCertificate(in);
 		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			return MXErrCode.ERR_X509;
 		}
 
 		X509Certificate t = (X509Certificate) c;
-		// System.out.println("版本号 "+t.getVersion());
-		// System.out.println("序列号 "+t.getSerialNumber().toString(16));
-		// System.out.println("全名 "+t.getSubjectDN());
-		// System.out.println("签发者全名n"+t.getIssuerDN());
-		// System.out.println("有效期起始日 "+t.getNotBefore());
-		// System.out.println("有效期截至日 "+t.getNotAfter());
-		// System.out.println("签名算法 "+t.getSigAlgName());
-		//
-		// byte[] sig=t.getSignature();
-		// System.out.println("签名n"+new BigInteger(sig).toString(16));
 
 		PublicKey pk = t.getPublicKey();
 		byte[] pkenc = pk.getEncoded();
-
-		// System.out.println("公钥");
-		// for(int i=0;i<pkenc.length;i++){
-		// System.out.print(pkenc[i]+",");
-		// }
-		// SaveData("TEST2.dat",pkenc,pkenc.length);
-
 		byte[] output = null;
 		try {
 			output = RSAEncrypt.encrypt((RSAPublicKey) pk, inputContent);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (output == null) {
 			return MXErrCode.ERR_PUBKEY_ENCRYPT;
 		}
-		// SaveData("output3.dat",output,output.length);
 		for (int i = 0; i < output.length; i++) {
 			outputContent[i] = output[i];
 		}

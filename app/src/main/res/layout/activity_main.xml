@@ -100,11 +100,29 @@
             android:layout_width="match_parent"
             android:layout_height="50dp" />
 
-        <Button
-            android:text="Set Device Mode"
-            android:id="@+id/btn_set_device_mode"
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="50dp" />
+            android:layout_height="50dp">
+
+            <Button
+                android:layout_weight="1"
+                android:text="Set Device Mode L0"
+                android:id="@+id/btn_set_device_mode0"
+                android:layout_width="0dp"
+                android:layout_height="50dp" />
+
+            <Button
+                android:layout_weight="1"
+                android:text="Set Device Mode L1"
+                android:id="@+id/btn_set_device_mode1"
+                android:layout_width="0dp"
+                android:layout_height="50dp" />
+
+
+        </LinearLayout>
+
+
 
         <Button
             android:text="Base64 Encode"
@@ -196,11 +214,33 @@
             android:layout_width="match_parent"
             android:layout_height="50dp" />
 
-        <Button
-            android:text="Set USB Encryption"
-            android:id="@+id/btn_set_usb_encryption"
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="50dp" />
+            android:layout_height="50dp">
+
+            <Button
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:text="Set encrypt mode 0 no encrypt"
+                android:id="@+id/btn_set_usb_encryption0"
+                android:layout_width="0dp"
+                android:layout_height="50dp" />
+
+            <Button
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:text="Set encrypt mode 1 encrypt"
+                android:id="@+id/btn_set_usb_encryption1"
+                android:layout_width="0dp"
+                android:layout_height="50dp" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_finger"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 </ScrollView>

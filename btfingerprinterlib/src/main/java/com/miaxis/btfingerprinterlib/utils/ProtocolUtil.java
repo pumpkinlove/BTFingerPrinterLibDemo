@@ -57,13 +57,8 @@ public class ProtocolUtil {
         byte[] reqBytes = new byte[totalLen];
         reqBytes[0] = ProtocolOrderCode.PROTOCOL_HEAD;
 
-        if (dataLen < 256) {
-            reqBytes[1] = (byte) 0x00;               //长度从P1到数据结束的长度,用2字节表示，小于256字节用字节3表示，字节2补零,大于256字节用字节3和字节2表示
-            reqBytes[2] = (byte) orderLen;           //长度
-        } else {
-            reqBytes[1] = (byte) (dataLen - 255);
-            reqBytes[2] = (byte) 0xFF;
-        }
+        reqBytes[1] = (byte) (orderLen / 256);             //长度从P1到数据结束的长度,用2字节表示，小于256字节用字节3表示，字节2补零,大于256字节用字节3和字节2表示
+        reqBytes[2] = (byte) (orderLen % 256);          //长度
 
         reqBytes[3] = protocolOrderCode;        //P1  约定的指纹设备命令
         reqBytes[4] = (byte) 0x00;              //P2  保留

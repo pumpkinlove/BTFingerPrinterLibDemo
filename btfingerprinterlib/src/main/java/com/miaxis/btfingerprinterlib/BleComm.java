@@ -21,6 +21,7 @@ import com.miaxis.btfingerprinterlib.utils.cipher.Encrypt;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.greenrobot.eventbus.EventBus;
 
 import java.security.interfaces.RSAPublicKey;
 
@@ -131,6 +132,8 @@ public class BleComm {
     }
 
     private void analysisData(byte[] btData) {
+
+        Log.e(TAG, CodeUtil.hex2str(btData));
         if (btData == null || btData.length == 0) {
             return;
         }
@@ -162,12 +165,21 @@ public class BleComm {
         }
 
         if (hasEnd) {
-            StringBuilder reMsgSb = new StringBuilder();
-            byte[] mergeCacheData = CodeUtil.mergeRetBytes(cacheData);
-            if (CodeUtil.getXorCheckCode(mergeCacheData) != mergeCacheData[mergeCacheData.length - 2]) {
-                cacheData = null;
-                return;
+            byte[] mergeCacheData;
+            if (curOrderCode == ProtocolOrderCode.DEV_GET_IMAGE) {
+                mergeCacheData = cacheData;
+            } else {
+                mergeCacheData = CodeUtil.mergeRetBytes(cacheData);
             }
+
+//            if (CodeUtil.getXorCheckCode(mergeCacheData) != mergeCacheData[mergeCacheData.length - 2]) {
+//                cacheData = null;
+//                if (commonCallBack != null) {
+//                    commonCallBack.onFailure("Check Code Error");
+//                }
+//                return;
+//            }
+            StringBuilder reMsgSb = new StringBuilder();
             if (handleReturnSw1(mergeCacheData[3], reMsgSb)) {
                 commonCallBack.onSuccess(CodeUtil.getData(mergeCacheData));
             } else {
@@ -219,7 +231,39 @@ public class BleComm {
             orderCodeData = DES3.encryptMode(sessionKey, orderCodeData);
         }
         byte[] reqBytes = ProtocolUtil.getReqOrder(orderCode, orderCodeData);
-        writeData(CodeUtil.splitReqBytes(reqBytes));
+        byte[] bSend = CodeUtil.splitReqBytes(reqBytes);
+        Log.e(TAG, CodeUtil.hex2str(bSend));
+//        writeData(bSend);
+        int dataLen = bSend.length;
+        if (dataLen <= 20) {
+            writeData(bSend);
+        } else {
+            final int packNum = dataLen % 20 == 0 ? (dataLen / 20) : (dataLen / 20 + 1);
+            int lastPackLen = dataLen % 20 == 0 ? 20 : (dataLen % 20);
+            final byte[][] packs = new byte[packNum][20];
+            for (int i = 0; i < packNum; i++) {
+                if (i == packNum - 1) {
+                    packs[i] = new byte[lastPackLen];
+                    System.arraycopy(bSend, i * 20, packs[i], 0, lastPackLen);
+                } else {
+                    System.arraycopy(bSend, i * 20, packs[i], 0, 20);
+                }
+            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < packNum; i++) {
+                        try {
+                            Thread.sleep(20);
+                            writeData(packs[i]);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }).start();
+        }
+
     }
 
     private void writeData(final byte[] orderCodeData) {
@@ -227,10 +271,20 @@ public class BleComm {
                 BluetoothUUID.SERVICE_UUID_STR,
                 BluetoothUUID.CH_9600_UUID_STR,
                 orderCodeData,
+                true,
                 new BleWriteCallback() {
                     @Override
                     public void onWriteSuccess(int current, int total, byte[] justWrite) {
-                        Log.e(TAG,"onWriteSuccess current:" + current + " total:" + total);
+                        StringBuilder justWriteDataSb = new StringBuilder();
+                        for (int i = 0; i < justWrite.length; i ++) {
+
+                            justWriteDataSb.append(CodeUtil.hex2str(new byte[]{justWrite[i]}));
+                            justWriteDataSb.append(" ");
+                            if ((i+1) % 20 == 0) {
+                                justWriteDataSb.append("\r\n");
+                            }
+                        }
+                        Log.e(TAG,justWriteDataSb.toString());
                     }
 
                     @Override
@@ -485,7 +539,9 @@ public class BleComm {
         data[0] = iFileType;
         byte[] lenBytes = CodeUtil.intToByteArray(dataLen);
         System.arraycopy(lenBytes, 0, data, 1, 4);
-        System.arraycopy(fileData, 0, data, 5, dataLen);
+        if (fileData != null && dataLen > 0) {
+            System.arraycopy(fileData, 0, data, 5, dataLen);
+        }
         sendOrder(ProtocolOrderCode.DEV_IMPORT_CERTIFICATE, data, 0, sessionKey);
     }
 
@@ -630,7 +686,7 @@ public class BleComm {
         commonCallBack = callBack;
         byte[] bDigestData = Digest.JAVADigest(inputData);
         byte[] OIDSHA_256 = new byte[]{0x30,0x31,0x30,0x0d,0x06,0x09,0x60,(byte) 0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20};
-        byte[] bToSignData = new byte[256];
+        byte[] bToSignData = new byte[OIDSHA_256.length + bDigestData.length];
         System.arraycopy(OIDSHA_256, 0, bToSignData, 0, OIDSHA_256.length);
         System.arraycopy(bDigestData, 0, bToSignData, OIDSHA_256.length, bDigestData.length);
         byte[] bSendData = new byte[1 + 4 + bToSignData.length];
@@ -645,7 +701,5 @@ public class BleComm {
         commonCallBack = callBack;
         sendOrder(ProtocolOrderCode.DEV_GET_MODE, null, 0, null);
     }
-
-
 
 }

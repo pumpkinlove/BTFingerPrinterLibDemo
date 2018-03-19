@@ -6,6 +6,8 @@ import com.miaxis.btfingerprinterlib.utils.CodeUtil;
 import com.miaxis.btfingerprinterlib.utils.ProtocolUtil;
 import com.miaxis.btfingerprinterlib.utils.cipher.RSAEncrypt;
 
+import org.zz.jni.zzFingerAlg;
+
 /**
  * Miaxis ble finger printer api
  * Created by xu.nan on 2018/3/7.
@@ -16,6 +18,7 @@ public class MxBlePrinterApi {
     private static final String TAG = "MxBlePrinterApi";
     private BleComm bleComm;
     private static volatile MxBlePrinterApi api;
+    private org.zz.jni.zzFingerAlg zzFingerAlg;
 
     public static MxBlePrinterApi getInstance(Application app) {
         if (api == null) {
@@ -26,6 +29,7 @@ public class MxBlePrinterApi {
 
     private MxBlePrinterApi(Application app) {
         bleComm = new BleComm(app);
+        zzFingerAlg = new zzFingerAlg();
     }
 
     public int initBle() {
@@ -85,6 +89,8 @@ public class MxBlePrinterApi {
                                         callBack.onFailure(errorMessage);
                                     }
                                 });
+                            } else {
+                                bleComm.getFingerImage(callBack);
                             }
                         }
 
@@ -189,16 +195,25 @@ public class MxBlePrinterApi {
         bleComm.signData(keyNum, inputData, callBack);
     }
 
-    public void tmfGetAlgoVersion() {
-        // TODO: 2018/3/13  
+    public int tmfGetAlgoVersion(byte[] bVersion) {
+        return zzFingerAlg.tmfGetAlgoVersion(bVersion);
     }
 
-    public void tmfGetTzFMR() {
-        // TODO: 2018/3/13  
+    public int tmfGetTzFMR(byte[] ucImageBuf,int inWidth, int inHeight,
+                            byte[] tzBuf,int[] fmrRecordSize) {
+        return zzFingerAlg.tmfGetTzFMR(ucImageBuf, inWidth, inHeight, tzBuf, fmrRecordSize);
     }
 
-    public void tmfFingerMatchFMR() {
-        // TODO: 2018/3/13
+    /**
+     * @author   chen.gs
+     * @category Fingerprint match
+     * @param  	 mbBuf  - Fingerprint feature buffer
+     *         	 tzBuf  - Fingerprint feature buffer
+     *           level  - Security level(1~5),recommended 3
+     * @return 	 0 - success,  others - failed
+     * */
+    public int tmfFingerMatchFMR(byte[] mbBuf,byte[] tzBuf,int level) {
+        return zzFingerAlg.tmfFingerMatchFMR(mbBuf, tzBuf, level);
     }
 
     public void tmfGetSecureProcessorUUID(BleComm.CommonCallBack callBack) {
